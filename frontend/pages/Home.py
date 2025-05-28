@@ -30,6 +30,6 @@ def Home():
     st.markdown("---")
     st.markdown("""
     <footer style='text-align:center; font-size:0.8rem; color:gray; margin-top:2rem;'>
-        Developed by Shagufta Riaz | Software Engineering FYP 2025 | Contact: shagufta@example.com
+        Developed by Shagufta Riaz & Zayab Akhtar | Software Engineering FYP 2025 | Contact: shaguftariaz771@gmail.com OR zayabakhtar112@gmail.com
     </footer>
     """, unsafe_allow_html=True)
