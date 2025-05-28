@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
 def FlowTable(results, flow_data_df):
     detailed = results.get("detailed_results", [])
@@ -40,11 +41,30 @@ def FlowTable(results, flow_data_df):
     df_display = merged_df[cols_to_show].rename(columns=display_cols)
 
     # Format Confidence
-    df_display['Confidence (%)'] = df_display['Confidence (%)'].apply(lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A")
+    df_display['Confidence (%)'] = df_display['Confidence (%)'].apply(
+        lambda x: f"{x:.2f}%" if pd.notnull(x) else "N/A"
+    )
 
     # Round Duration
     if 'Duration (s)' in df_display.columns:
         df_display['Duration (s)'] = df_display['Duration (s)'].round(2)
 
+    # Show flow table
     st.subheader("Network Flow Details")
     st.dataframe(df_display, use_container_width=True)
+    st.write("Columns in merged_df:", merged_df.columns.tolist())
+
+    # Corrected scatter plot condition using original merged_df column names
+    if 'Flow Duration' in merged_df.columns and 'Confidence (%)' in merged_df.columns:
+        fig = px.scatter(
+            merged_df,
+            x='Flow Duration',
+            y='Confidence (%)',
+            color='Predicted Label',
+            hover_data=['Src IP', 'Dst IP', 'Protocol'],
+            title='Flow Duration vs Confidence Score Scatter Plot'
+        )
+        st.subheader("Flow Duration vs Confidence Scatter Plot")
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.write("Required columns for scatter plot not found.")
