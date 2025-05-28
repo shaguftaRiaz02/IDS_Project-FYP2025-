@@ -37,7 +37,6 @@ def FlowTable(results, flow_data_df):
 
     # Filter columns that exist in merged_df
     cols_to_show = [col for col in display_cols.keys() if col in merged_df.columns]
-
     df_display = merged_df[cols_to_show].rename(columns=display_cols)
 
     # Format Confidence
@@ -54,7 +53,24 @@ def FlowTable(results, flow_data_df):
     st.dataframe(df_display, use_container_width=True)
     st.write("Columns in merged_df:", merged_df.columns.tolist())
 
-    # Corrected scatter plot condition using original merged_df column names
+    # 🚨 Identify destination IPs under attack
+    st.subheader("🛡️ IPs Potentially Under Attack")
+    malicious_flows = merged_df[merged_df['Predicted Label'] != 'Normal']
+
+    if not malicious_flows.empty and 'Dst IP' in malicious_flows.columns:
+        ip_counts = malicious_flows['Dst IP'].value_counts().reset_index()
+        ip_counts.columns = ['Destination IP', 'Malicious Flow Count']
+        st.dataframe(ip_counts.head(10), use_container_width=True)
+
+        # Show alert for top destination IP
+        top_ip = ip_counts.iloc[0]
+        if top_ip['Malicious Flow Count'] > 5:
+            st.error(f"🚨 Alert: `{top_ip['Destination IP']}` is under potential attack "
+                     f"with **{top_ip['Malicious Flow Count']}** malicious flows.")
+    else:
+        st.success("✅ No destination IPs show signs of attack in current data.")
+
+    # Scatter plot
     if 'Flow Duration' in merged_df.columns and 'Confidence (%)' in merged_df.columns:
         fig = px.scatter(
             merged_df,
