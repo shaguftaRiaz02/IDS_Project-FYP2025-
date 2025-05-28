@@ -105,23 +105,23 @@ def Upload():
         )
         st.plotly_chart(fig, use_container_width=True)
 
-        st.markdown("""
+        st.markdown(f"""
 ### 🔍 Confidence Breakdown (in %)
 
-- 🐢 **Minimum Confidence:** {:.2f}%
+- 🐢 **Minimum Confidence:** {min_conf * 100:.2f}%
   - This represents the lowest certainty recorded by the model across all network flows.
   - If this value is below 50%, it indicates the model was unsure about at least one flow.
 
-- 🤖 **Average Confidence:** {:.2f}%
+- 🤖 **Average Confidence:** {average_conf * 100:.2f}%
   - The overall mean confidence score across all predictions.
   - Values above 70% generally indicate reliable model predictions.
 
-- 🚀 **Maximum Confidence:** {:.2f}%
+- 🚀 **Maximum Confidence:** {max_conf * 100:.2f}%
   - The highest confidence score observed.
   - A value close to 100% means the model was very certain about some flows.
 
 📜 These confidence values reflect the model's certainty in classifying each network flow as normal or malicious, helping users understand the reliability of the predictions.
-        """.format(min_conf * 100, average_conf * 100, max_conf * 100))
+        """)
 
         st.subheader("Detailed Flow Data")
-        FlowTable(results)
+        FlowTable(results, uploaded_df)
