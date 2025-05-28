@@ -18,16 +18,10 @@ def FlowTable(results, flow_data_df):
     else:
         preds_df = pd.DataFrame(detailed)
 
-    # Make sure preds_df has 'predicted_label' and 'confidence' columns or adapt to your keys
-    # Example column names in preds_df: 'predicted_label', 'confidence'
-
-    # Merge flow data with prediction results on a unique key
-    # Here, let's assume order matches or you can merge on a flow ID if available
-
-    # If both dataframes have the same length and order:
+    # Use correct confidence key: 'confidence_score' from predictor output
     merged_df = flow_data_df.copy()
     merged_df['Predicted Label'] = preds_df.get('predicted_label', preds_df.get('Label', 'N/A'))
-    merged_df['Confidence (%)'] = preds_df.get('confidence', 0) * 100
+    merged_df['Confidence (%)'] = preds_df.get('confidence_score', 0) * 100
 
     # Select and rename columns for display
     display_cols = {
