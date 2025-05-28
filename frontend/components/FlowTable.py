@@ -51,7 +51,7 @@ def FlowTable(results, flow_data_df):
     # Show flow table
     st.subheader("Network Flow Details")
     st.dataframe(df_display, use_container_width=True)
-    st.write("Columns in merged_df:", merged_df.columns.tolist())
+    # st.write("Columns in merged_df:", merged_df.columns.tolist())
 
     # 🚨 Identify destination IPs under attack
     st.subheader("🛡️ IPs Potentially Under Attack")
