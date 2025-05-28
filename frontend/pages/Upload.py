@@ -3,34 +3,103 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.graph_objects as go
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 from components.FileUploader import FileUploader
 from components.FlowTable import FlowTable
 from components.PieChart import PieChart
 
+
+def generate_pdf_report(filename, total_flows, attack_counts, summary_stats):
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(30, height - 50, "Network Flow Analysis Report")
+
+    c.setFont("Helvetica", 12)
+    c.drawString(30, height - 80, f"File: {filename}")
+    c.drawString(30, height - 100, f"Total Flows: {total_flows}")
+
+    c.drawString(30, height - 130, "Attack Type Distribution:")
+    y = height - 150
+    if attack_counts:
+        for attack, count in attack_counts.items():
+            percent = (count / total_flows) * 100 if total_flows else 0
+            c.drawString(50, y, f"- {attack}: {count} flows ({percent:.2f}%)")
+            y -= 20
+    else:
+        c.drawString(50, y, "No attacks detected.")
+        y -= 20
+
+    y -= 10
+    c.drawString(30, y, "Prediction Confidence Overview:")
+    y -= 20
+
+    min_conf = summary_stats.get('min_confidence', 0) * 100
+    avg_conf = summary_stats.get('average_confidence', 0) * 100
+    max_conf = summary_stats.get('max_confidence', 0) * 100
+
+    c.drawString(50, y, f"- Minimum Confidence: {min_conf:.2f}%")
+    y -= 20
+    c.drawString(50, y, f"- Average Confidence: {avg_conf:.2f}%")
+    y -= 20
+    c.drawString(50, y, f"- Maximum Confidence: {max_conf:.2f}%")
+
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+
 def Upload():
     st.header("Network Flow Upload & Analysis")
 
-    results = None
-    uploaded_df = None
-    uploaded_filename = None
+    # Restore from session state or initialize to None
+    results = st.session_state.get('results', None)
+    uploaded_df = st.session_state.get('uploaded_df', None)
+    uploaded_filename = st.session_state.get('uploaded_filename', None)
 
     def handle_results(results_data, filename, df):
-        nonlocal results, uploaded_filename, uploaded_df
-        results = results_data
-        uploaded_filename = filename
-        uploaded_df = df
+        st.session_state['results'] = results_data
+        st.session_state['uploaded_df'] = df
+        st.session_state['uploaded_filename'] = filename
+        # Streamlit automatically reruns when session_state changes
 
     FileUploader(on_upload_success=handle_results)
 
-    # fallback if no upload data passed yet
+    # Fallback if no upload data passed yet
     if uploaded_df is None:
         try:
             uploaded_df = pd.read_csv("temp_uploaded.csv")
             uploaded_filename = "temp_uploaded.csv"
+            st.session_state['uploaded_df'] = uploaded_df
+            st.session_state['uploaded_filename'] = uploaded_filename
         except Exception:
             uploaded_df = None
             uploaded_filename = None
+
+    # Show PDF report download button early, if results exist
+    if results and uploaded_df is not None:
+        total_flows = results.get("total_flows", len(uploaded_df))
+        attack_counts = results.get("attack_counts", {})
+        summary_stats = results.get("summary_stats", {})
+
+        pdf_buffer = generate_pdf_report(
+            uploaded_filename,
+            total_flows,
+            attack_counts,
+            summary_stats
+        )
+        st.download_button(
+            label="Download PDF Report",
+            data=pdf_buffer,
+            file_name="network_flow_report.pdf",
+            mime="application/pdf"
+        )
 
     if results and uploaded_df is not None:
         total_flows = results.get("total_flows", len(uploaded_df))
@@ -77,7 +146,6 @@ def Upload():
 
         st.markdown("---")
 
-        # Summary report with plot
         summary_stats = results.get("summary_stats", {})
         average_conf = summary_stats.get('average_confidence', 0)
         max_conf = summary_stats.get('max_confidence', 0)
