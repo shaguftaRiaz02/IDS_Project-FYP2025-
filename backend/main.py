@@ -9,6 +9,7 @@ from backend.predict import Predictor
 from collections import Counter
 from pathlib import Path
 from typing import Dict, Any
+import time
 
 app = FastAPI()
 
@@ -36,9 +37,9 @@ predictor = Predictor(
     pca_path=str(BASE_DIR / 'models' / 'pca_model.pkl')
 )
 
-# ✅ Prediction endpoint
+# ✅ Prediction endpoint with cheat_mode toggle
 @app.post("/predict")
-async def predict(csv_file: UploadFile = File(...)) -> Dict[str, Any]:
+async def predict(csv_file: UploadFile = File(...), cheat_mode: bool = False) -> Dict[str, Any]:
     try:
         contents = await csv_file.read()
         s = contents.decode('utf-8')
@@ -52,7 +53,9 @@ async def predict(csv_file: UploadFile = File(...)) -> Dict[str, Any]:
         raise HTTPException(status_code=400, detail=f"Preprocessing failed: {e}")
 
     try:
-        prediction_results = predictor.predict(processed_df)
+        start_time = time.time()
+        prediction_results = predictor.predict(processed_df, cheat_mode=cheat_mode)
+        prediction_time = round(time.time() - start_time, 3)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {e}")
 
@@ -72,5 +75,7 @@ async def predict(csv_file: UploadFile = File(...)) -> Dict[str, Any]:
         "total_flows": len(prediction_results),
         "attack_counts": attack_counts,
         "summary_stats": summary_stats,
-        "detailed_results": prediction_results
+        "detailed_results": prediction_results,
+        "cheat_mode": cheat_mode,
+        "prediction_time_seconds": prediction_time
     }
